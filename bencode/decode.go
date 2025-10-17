@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-func parseInteger(data []byte, pos int) (Value, int, error) {
+func decodeInteger(data []byte, pos int) (Value, int, error) {
 	pos++
 	num, pos, err := getNumberTilStopper(data, pos, 'e')
 	if err != nil {
@@ -13,7 +13,7 @@ func parseInteger(data []byte, pos int) (Value, int, error) {
 	return Integer(num), pos + 1, nil
 }
 
-func parseString(data []byte, pos int) (Value, int, error) {
+func decodeString(data []byte, pos int) (Value, int, error) {
 	num, pos, err := getNumberTilStopper(data, pos, ':')
 
 	if err != nil {
@@ -33,12 +33,12 @@ func parseString(data []byte, pos int) (Value, int, error) {
 	return String(str), end, nil
 }
 
-func parseList(data []byte, pos int) (Value, int, error) {
+func decodeList(data []byte, pos int) (Value, int, error) {
 	pos++
 	list := List{}
 
 	for pos < len(data) && data[pos] != 'e' {
-		val, newPos, err := parseValue(data, pos)
+		val, newPos, err := decodeValue(data, pos)
 		if err != nil {
 			return nil, pos, err
 		}
@@ -54,13 +54,13 @@ func parseList(data []byte, pos int) (Value, int, error) {
 	return list, pos, nil
 }
 
-func parseDictionary(data []byte, pos int) (Value, int, error) {
+func decodeDictionary(data []byte, pos int) (Value, int, error) {
 	pos++
 	dict := Dict{}
 	var lastKey string
 
 	for pos < len(data) && data[pos] != 'e' {
-		tempKey, newPos, err := parseValue(data, pos)
+		tempKey, newPos, err := decodeValue(data, pos)
 		if err != nil {
 			return nil, pos, err
 		}
@@ -77,7 +77,7 @@ func parseDictionary(data []byte, pos int) (Value, int, error) {
 		}
 		lastKey = currentKey
 
-		val, newPos, err := parseValue(data, pos)
+		val, newPos, err := decodeValue(data, pos)
 		if err != nil {
 			return nil, pos, err
 		}
@@ -94,27 +94,27 @@ func parseDictionary(data []byte, pos int) (Value, int, error) {
 	return dict, pos, nil
 }
 
-func parseValue(data []byte, pos int) (Value, int, error) {
+func decodeValue(data []byte, pos int) (Value, int, error) {
 	if pos >= len(data) {
 		return nil, pos, fmt.Errorf("unexpected EOF")
 	}
 
 	switch data[pos] {
 	case 'i':
-		return parseInteger(data, pos)
+		return decodeInteger(data, pos)
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-		return parseString(data, pos)
+		return decodeString(data, pos)
 	case 'l':
-		return parseList(data, pos)
+		return decodeList(data, pos)
 	case 'd':
-		return parseDictionary(data, pos)
+		return decodeDictionary(data, pos)
 	default:
 		return nil, pos, fmt.Errorf("invalid datatype: %c", data[pos])
 	}
 }
 
-func Parse(data []byte) (Value, error) {
-	val, pos, err := parseValue(data, 0)
+func Decode(data []byte) (Value, error) {
+	val, pos, err := decodeValue(data, 0)
 	if pos != len(data) {
 		return nil, fmt.Errorf("invalid file")
 	}
