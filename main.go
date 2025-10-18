@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"os"
 	"torrent-client/bencode"
-	"torrent-client/torrent"
+	"torrent-client/peers"
 	torr "torrent-client/torrent"
 	"torrent-client/tracker"
 )
 
 func main() {
-	var torrent torrent.Torrent
+	var torrent torr.Torrent
 	file, err := os.ReadFile("debian.torrent")
 
 	if err != nil {
@@ -52,5 +52,20 @@ func main() {
 	if err != nil {
 		fmt.Print(err)
 	}
-	fmt.Print(res)
+	for _, peer := range res.Peers {
+		pc, err := peers.Connect(peer.IP, peer.Port)
+		if err != nil {
+			fmt.Printf("Failed to connect to %s:%d: %v\n", peer.IP, peer.Port, err)
+			continue
+		}
+		defer pc.Conn.Close()
+
+		err = pc.Handshake(req.InfoHash, req.PeerID)
+		if err != nil {
+			fmt.Printf("Failed to handshake to %s:%d: %v\n", peer.IP, peer.Port, err)
+			continue
+		}
+
+		fmt.Printf("Connected successfully to %s:%d\n", peer.IP, peer.Port)
+	}
 }

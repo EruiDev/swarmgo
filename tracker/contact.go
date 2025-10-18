@@ -40,23 +40,16 @@ func ContactTracker(announceURL string, req TrackerRequest) (TrackerResponse, er
 		return TrackerResponse{}, err
 	}
 
-	intervalVal, exists := decodeBody.(bencode.Dict)["interval"]
-	if !exists {
-		return TrackerResponse{}, fmt.Errorf("interval not found")
-	}
-	interval, ok := intervalVal.(bencode.Integer)
-	if !ok {
-		return TrackerResponse{}, fmt.Errorf("peers has incorrect type")
+	interval, err := getField[bencode.Integer](decodeBody.(bencode.Dict), "interval")
+	if err != nil {
+		return TrackerResponse{}, err
 	}
 
-	peersVal, exists := decodeBody.(bencode.Dict)["peers"]
-	if !exists {
-		return TrackerResponse{}, fmt.Errorf("peers not found")
+	peers, err := getField[bencode.String](decodeBody.(bencode.Dict), "peers")
+	if err != nil {
+		return TrackerResponse{}, err
 	}
-	peers, ok := peersVal.(bencode.String)
-	if !ok {
-		return TrackerResponse{}, fmt.Errorf("peers has incorrect type")
-	}
+
 	peerList, _ := peerParser([]byte(peers))
 	final := TrackerResponse{
 		Interval: int64(interval),
@@ -65,12 +58,26 @@ func ContactTracker(announceURL string, req TrackerRequest) (TrackerResponse, er
 	return final, nil
 }
 
+func getField[T any](d bencode.Dict, key string) (T, error) {
+	valDict, exists := d[key]
+	if !exists {
+		var zero T
+		return zero, fmt.Errorf("%s not found", key)
+	}
+	val, ok := valDict.(T)
+	if !ok {
+		var zero T
+		return zero, fmt.Errorf("%s has incorrect type", key)
+	}
+	return val, nil
+}
+
 func peerParser(data []byte) ([]Peer, error) {
 	if len(data)%6 != 0 {
 		return nil, fmt.Errorf("invalid amount of bytes")
 	}
 
-	list := []Peer{}
+	list := make([]Peer, 0, len(data)/6)
 	for i := 0; i+6 <= len(data); i = 6 + i {
 		ip := fmt.Sprintf("%d.%d.%d.%d", data[i], data[i+1], data[i+2], data[i+3])
 		port := int(data[i+4])<<8 | int(data[i+5])
