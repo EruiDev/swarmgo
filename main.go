@@ -65,7 +65,13 @@ func main() {
 			fmt.Printf("Failed to handshake to %s:%d: %v\n", peer.IP, peer.Port, err)
 			continue
 		}
+		msg, err := pc.ReadMessage()
+		if err != nil {
+			fmt.Printf("Failed to read message on %s:%d: %v\n", peer.IP, peer.Port, err)
+			continue
+		}
+		fmt.Print(*msg)
 
-		fmt.Printf("Connected successfully to %s:%d\n", peer.IP, peer.Port)
+		fmt.Printf("\nConnected successfully to %s:%d\n", peer.IP, peer.Port)
 	}
 }
