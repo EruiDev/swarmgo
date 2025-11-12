@@ -1,10 +1,13 @@
 package peers
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+	"io"
+)
 
 func (pc *PeerConnection) ReadMessage() (*Message, error) {
 	lengthBytes := make([]byte, 4)
-	_, err := pc.Conn.Read(lengthBytes)
+	_, err := io.ReadFull(pc.Conn, lengthBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -16,7 +19,7 @@ func (pc *PeerConnection) ReadMessage() (*Message, error) {
 	}
 
 	typeBytes := make([]byte, 1)
-	_, err = pc.Conn.Read(typeBytes)
+	_, err = io.ReadFull(pc.Conn, typeBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -24,7 +27,7 @@ func (pc *PeerConnection) ReadMessage() (*Message, error) {
 	msgType := MessageType(typeBytes[0])
 
 	payload := make([]byte, length-1)
-	_, err = pc.Conn.Read(payload)
+	_, err = io.ReadFull(pc.Conn, payload)
 	if err != nil {
 		return nil, err
 	}
@@ -45,4 +48,21 @@ func (pc *PeerConnection) SendMessage(msg *Message) error {
 	data := append(lengthBytes, payload...)
 	_, err := pc.Conn.Write(data)
 	return err
+}
+
+func (pc *PeerConnection) RequestPiece(pieceIndex int, offset int, length int) error {
+	payload := make([]byte, 12)
+
+	binary.BigEndian.PutUint32(payload[0:4], uint32(pieceIndex))
+
+	binary.BigEndian.PutUint32(payload[4:8], uint32(offset))
+
+	binary.BigEndian.PutUint32(payload[8:12], uint32(length))
+
+	msg := &Message{
+		Type:    Request,
+		Payload: payload,
+	}
+
+	return pc.SendMessage(msg)
 }
