@@ -8,7 +8,7 @@ import (
 )
 
 func Connect(ip string, port int) (*PeerConnection, error) {
-	addr := fmt.Sprintf("%s:%d", ip, port)
+	addr := net.JoinHostPort(ip, fmt.Sprintf("%d", port))
 
 	conn, err := net.DialTimeout("tcp", addr, 3*time.Second)
 	if err != nil {
