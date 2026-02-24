@@ -3,7 +3,7 @@ package download
 import (
 	"fmt"
 	"os"
-	torr "torrent-client/torrent"
+	torr "swarmgo/torrent"
 )
 
 func newResultCollector(file *os.File, torrent torr.Torrent, numPieces int, workQueue chan PieceWork, results <-chan PieceResult) *resultCollector {

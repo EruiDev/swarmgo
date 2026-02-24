@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	torr "torrent-client/torrent"
-	"torrent-client/tracker"
+	torr "swarmgo/torrent"
+	"swarmgo/tracker"
 )
 
 func Download(file string) error {

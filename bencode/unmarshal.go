@@ -2,7 +2,7 @@ package bencode
 
 import (
 	"fmt"
-	torr "torrent-client/torrent"
+	torr "swarmgo/torrent"
 )
 
 func getFieldAsType[T any](dict Dict, fieldName string) (T, error) {

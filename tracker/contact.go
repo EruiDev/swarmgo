@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"torrent-client/bencode"
+	"swarmgo/bencode"
 )
 
 func ContactTracker(announceURL string, req TrackerRequest) (TrackerResponse, error) {

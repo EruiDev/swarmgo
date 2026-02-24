@@ -3,9 +3,9 @@ package download
 import (
 	"fmt"
 	"os"
-	"torrent-client/bencode"
-	torr "torrent-client/torrent"
-	"torrent-client/tracker"
+	"swarmgo/bencode"
+	torr "swarmgo/torrent"
+	"swarmgo/tracker"
 )
 
 func ReadAndExtractFile(file string, torrent *torr.Torrent) (tracker.TrackerRequest, error) {

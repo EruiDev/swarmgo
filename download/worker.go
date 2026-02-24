@@ -5,8 +5,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"time"
-	"torrent-client/peers"
-	"torrent-client/tracker"
+	"swarmgo/peers"
+	"swarmgo/tracker"
 )
 
 func startPeerWorker(cfg workerConfig) error {

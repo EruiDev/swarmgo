@@ -4,8 +4,8 @@ import (
 	"context"
 	"os"
 	"sync"
-	torr "torrent-client/torrent"
-	"torrent-client/tracker"
+	torr "swarmgo/torrent"
+	"swarmgo/tracker"
 )
 
 const (
