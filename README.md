@@ -33,7 +33,7 @@ git clone <repository-url>
 cd swarmgo
 
 # Build the binary
-go build -o swarmgo
+go build
 ```
 
 ## Usage
@@ -116,4 +116,4 @@ Contributions are welcome! Please feel free to submit issues or pull requests.
 
 ## License
 
-[Add your license here]
+MIT License - Copyright (c) 2026 Oriol Moles
