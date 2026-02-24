@@ -9,18 +9,6 @@ import (
 	"torrent-client/tracker"
 )
 
-// workerConfig holds configuration for a download worker
-type workerConfig struct {
-	peer       tracker.Peer
-	infoHash   [20]byte
-	peerID     [20]byte
-	workQueue  chan PieceWork
-	results    chan<- PieceResult
-	semaphore  chan struct{}
-	ctx        context.Context
-}
-
-// startPeerWorker manages a connection to a single peer and downloads pieces
 func startPeerWorker(cfg workerConfig) error {
 	pc, err := connectAndHandshake(cfg.peer, cfg.infoHash, cfg.peerID)
 	if err != nil {
@@ -34,18 +22,15 @@ func startPeerWorker(cfg workerConfig) error {
 
 	fmt.Printf("[%s:%d] Unchoked, ready to download\n", cfg.peer.IP, cfg.peer.Port)
 
-	// Start keepalive sender
 	ctx, cancel := context.WithCancel(cfg.ctx)
 	defer cancel()
 	go sendKeepalive(ctx, pc)
 
-	// Download pieces from work queue
 	downloadFromPeer(pc, cfg)
 
 	return nil
 }
 
-// connectAndHandshake establishes connection and performs handshake with a peer
 func connectAndHandshake(peer tracker.Peer, infoHash, peerID [20]byte) (*peers.PeerConnection, error) {
 	pc, err := peers.Connect(peer.IP, peer.Port)
 	if err != nil {
@@ -78,7 +63,6 @@ func connectAndHandshake(peer tracker.Peer, infoHash, peerID [20]byte) (*peers.P
 	return pc, nil
 }
 
-// waitForUnchoke sends interested message and waits for unchoke
 func waitForUnchoke(pc *peers.PeerConnection, peer tracker.Peer) error {
 	interested := &peers.Message{Type: peers.Interested, Payload: []byte{}}
 	pc.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
@@ -100,7 +84,6 @@ func waitForUnchoke(pc *peers.PeerConnection, peer tracker.Peer) error {
 	return fmt.Errorf("[%s:%d] did not get unchoke", peer.IP, peer.Port)
 }
 
-// sendKeepalive sends periodic keepalive messages to maintain connection
 func sendKeepalive(ctx context.Context, pc *peers.PeerConnection) {
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
@@ -116,7 +99,6 @@ func sendKeepalive(ctx context.Context, pc *peers.PeerConnection) {
 	}
 }
 
-// downloadFromPeer downloads pieces from the work queue using the peer connection
 func downloadFromPeer(pc *peers.PeerConnection, cfg workerConfig) {
 	connectionBroken := false
 
@@ -150,7 +132,6 @@ func downloadFromPeer(pc *peers.PeerConnection, cfg workerConfig) {
 	}
 }
 
-// downloadPiece downloads a complete piece by requesting blocks
 func downloadPiece(pc *peers.PeerConnection, work PieceWork) ([]byte, error) {
 	blockSize := 16384 // 16KB
 	pieceData := make([]byte, work.length)
@@ -172,7 +153,6 @@ func downloadPiece(pc *peers.PeerConnection, work PieceWork) ([]byte, error) {
 	return pieceData, nil
 }
 
-// downloadBlock requests and receives a single block from a peer
 func downloadBlock(pc *peers.PeerConnection, pieceIndex, offset, size int) ([]byte, error) {
 	pc.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 	err := pc.RequestPiece(pieceIndex, offset, size)
@@ -180,7 +160,6 @@ func downloadBlock(pc *peers.PeerConnection, pieceIndex, offset, size int) ([]by
 		return nil, err
 	}
 
-	// Read the piece block
 	for attempt := 0; attempt < 20; attempt++ {
 		pc.Conn.SetReadDeadline(time.Now().Add(30 * time.Second))
 		msg, err := pc.ReadMessage()
