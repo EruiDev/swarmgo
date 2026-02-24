@@ -4,43 +4,32 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	torr "torrent-client/torrent"
-	"torrent-client/tracker"
+	torr "swarmgo/torrent"
+	"swarmgo/tracker"
 )
 
-const (
-	maxConcurrentBlocks = 30
-	maxPeersToUse       = 50
-)
-
-// Download orchestrates the complete download process for a torrent file
 func Download(file string) error {
-	// Parse torrent file and contact tracker
 	torrent, req, res, err := initializeDownload(file)
 	if err != nil {
 		return err
 	}
 
-	// Prepare output file
 	outputFile, err := PrepareFile(torrent.Info.Name, torrent.Info.Length)
 	if err != nil {
 		return err
 	}
 	defer outputFile.Close()
 
-	// Setup download infrastructure
 	numPieces := len(torrent.Info.Pieces) / 20
 	workQueue := createQueue(numPieces, *torrent)
 	results := make(chan PieceResult, numPieces)
 
 	fmt.Printf("Starting download of %d pieces (%d bytes total)\n", numPieces, torrent.Info.Length)
 
-	// Start peer workers
 	ctx := context.Background()
 	peersToTry := min(len(res.Peers), maxPeersToUse)
 	startPeerWorkers(ctx, res.Peers[:peersToTry], *req, workQueue, results)
 
-	// Collect and process results
 	collector := newResultCollector(outputFile, *torrent, numPieces, workQueue, results)
 	collector.collect()
 	collector.printSummary()
@@ -48,7 +37,6 @@ func Download(file string) error {
 	return nil
 }
 
-// initializeDownload parses the torrent file and contacts the tracker
 func initializeDownload(file string) (*torr.Torrent, *tracker.TrackerRequest, *tracker.TrackerResponse, error) {
 	var torrent torr.Torrent
 	req, err := ReadAndExtractFile(file, &torrent)
@@ -64,7 +52,6 @@ func initializeDownload(file string) (*torr.Torrent, *tracker.TrackerRequest, *t
 	return &torrent, &req, &res, nil
 }
 
-// startPeerWorkers launches goroutines to download pieces from peers
 func startPeerWorkers(ctx context.Context, peers []tracker.Peer, req tracker.TrackerRequest, workQueue chan PieceWork, results chan<- PieceResult) {
 	var wg sync.WaitGroup
 	semaphore := make(chan struct{}, maxConcurrentBlocks)
@@ -85,13 +72,11 @@ func startPeerWorkers(ctx context.Context, peers []tracker.Peer, req tracker.Tra
 			}
 
 			if err := startPeerWorker(cfg); err != nil {
-				// Worker already logs detailed errors
 				return
 			}
 		}(peer)
 	}
 
-	// Close channels when all workers are done
 	go func() {
 		wg.Wait()
 		close(results)
@@ -102,7 +87,6 @@ func createQueue(numPieces int, torrent torr.Torrent) chan PieceWork {
 	workQueue := make(chan PieceWork, numPieces*2)
 	for i := range numPieces {
 		pieceLength := int(torrent.Info.PieceLength)
-		// Last piece might be smaller
 		if i == numPieces-1 {
 			lastPieceLength := int(torrent.Info.Length) - i*int(torrent.Info.PieceLength)
 			if lastPieceLength < pieceLength {

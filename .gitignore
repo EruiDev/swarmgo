@@ -19,3 +19,5 @@ go.work
 
 *.todo
 *.torrent
+*.txt
+swarmgo

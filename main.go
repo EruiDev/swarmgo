@@ -3,12 +3,12 @@ package main
 import (
 	"fmt"
 	"os"
-	"torrent-client/download"
+	"swarmgo/download"
 )
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: torrent-client <torrent-file>")
+		fmt.Println("Usage: swarmgo <torrent-file>")
 		os.Exit(1)
 	}
 
