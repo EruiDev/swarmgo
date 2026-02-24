@@ -20,3 +20,4 @@ go.work
 *.todo
 *.torrent
 *.txt
+torrent-client
